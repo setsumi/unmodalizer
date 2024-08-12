@@ -48,14 +48,18 @@ else
 		WinSet, ExStyle, -0x08000000, ahk_id %WindowUnderMouse%  ; WS_EX_NOACTIVATE 0x08000000L
 		WinSet, ExStyle, +0x00040000, ahk_id %WindowUnderMouse%  ; WS_EX_APPWINDOW 0x00040000L
 		WinSet, Style, +0x00cf0000, ahk_id %WindowUnderMouse%  ; WS_OVERLAPPEDWINDOW 0x00cf0000
+		AddSystemMenuItems(WindowUnderMouse)
 		
-		; disable taskbar click minimize for IrfanView erasing dialog contents
+		; disable minimize for IrfanView (erasing dialog contents)
 		WinGetClass, OwnerClass, ahk_id %hOwner%
 		if (OwnerClass == "IrfanView")
 			WinSet, Style, -0x00020000, ahk_id %WindowUnderMouse%  ; WS_MINIMIZEBOX 0x00020000L
 		;WinSet, Style, -0x00010000, ahk_id %WindowUnderMouse%  ; WS_MAXIMIZEBOX 0x00010000L
 		
-		; update the taskbar
+		; refresh window to apply changes
+		DllCall("SetWindowPos", "UInt", WindowUnderMouse, "UInt", 0, "Int", 0, "Int", 0, "Int", 0, "Int", 0, "UInt", 0x27)
+		
+		; update window's taskbar button
 		WinActivate, ahk_id %hOwner%
 		WinActivate, ahk_id %WindowUnderMouse%
 		SoundBeep, 750, 200
@@ -79,8 +83,7 @@ IsWindowVisible(hwnd) {
 	return 0
 }
 
-ExitFunc(ExitReason, ExitCode)
-{
+ExitFunc(ExitReason, ExitCode) {
 	Global HiddenWindow
 	if ExitReason not in Logoff,Shutdown
 	{
@@ -90,4 +93,17 @@ ExitFunc(ExitReason, ExitCode)
 		}
 	}
 	; Do not call ExitApp -- that would prevent other OnExit functions from being called.
+}
+
+AddSystemMenuItems(hwnd) {
+	hMenu := DllCall("GetSystemMenu", "UInt", hwnd, "UInt", False)
+	if (hMenu) {
+		DllCall("AppendMenu", "UInt", hMenu, "UInt", 0x800, "UInt", 0, "Str", "")
+		DllCall("AppendMenu", "UInt", hMenu, "UInt", 0x0000 | 0x0000, "UInt", 0xF120, "Str", "Restore")
+		;DllCall("AppendMenu", "UInt", hMenu, "UInt", 0x0000 | 0x0000, "UInt", 0xF010, "Str", "Move")
+		DllCall("AppendMenu", "UInt", hMenu, "UInt", 0x0000 | 0x0000, "UInt", 0xF000, "Str", "Size")
+		DllCall("AppendMenu", "UInt", hMenu, "UInt", 0x0000 | 0x0000, "UInt", 0xF020, "Str", "Minimize")
+		DllCall("AppendMenu", "UInt", hMenu, "UInt", 0x0000 | 0x0000, "UInt", 0xF030, "Str", "Maximize")
+		DllCall("DrawMenuBar", "UInt", hwnd)
+	}
 }
