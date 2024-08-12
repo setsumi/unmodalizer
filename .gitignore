@@ -1,0 +1,24 @@
+# Intermediate Build files
+/**/*.gch
+/**/*.map
+/**/*.obj
+/**/*.pch
+/**/*.tds
+
+/**/*.~*
+/**/*.#*
+
+# Output files
+/**/*.dll
+/**/*.lib
+/**/*.exe
+
+/__recovery
+/__history
+/Win32
+Debug
+Release
+/**/*.local
+/**/*.stat
+/**/*.res
+/**/*.dsk
