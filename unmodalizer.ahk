@@ -79,8 +79,8 @@ IsWindowVisible(hwnd) {
 	static WS_VISIBLE := 0x10000000 ; WS_VISIBLE
 	WinGet, Style, Style, ahk_id %hwnd%
 	if (Style & WS_VISIBLE)
-		return 1
-	return 0
+		return true
+	return false
 }
 
 ExitFunc(ExitReason, ExitCode) {
@@ -98,12 +98,37 @@ ExitFunc(ExitReason, ExitCode) {
 AddSystemMenuItems(hwnd) {
 	hMenu := DllCall("GetSystemMenu", "UInt", hwnd, "UInt", False)
 	if (hMenu) {
-		DllCall("AppendMenu", "UInt", hMenu, "UInt", 0x800, "UInt", 0, "Str", "")
-		DllCall("AppendMenu", "UInt", hMenu, "UInt", 0x0000 | 0x0000, "UInt", 0xF120, "Str", "Restore")
-		;DllCall("AppendMenu", "UInt", hMenu, "UInt", 0x0000 | 0x0000, "UInt", 0xF010, "Str", "Move")
-		DllCall("AppendMenu", "UInt", hMenu, "UInt", 0x0000 | 0x0000, "UInt", 0xF000, "Str", "Size")
-		DllCall("AppendMenu", "UInt", hMenu, "UInt", 0x0000 | 0x0000, "UInt", 0xF020, "Str", "Minimize")
-		DllCall("AppendMenu", "UInt", hMenu, "UInt", 0x0000 | 0x0000, "UInt", 0xF030, "Str", "Maximize")
+		DllCall("AppendMenu", "UInt", hMenu, "UInt", 0x800, "UInt", 0, "Str", "") ; separator
+		if (!MenuItemExist(hMenu, 0xF120)) {
+			DllCall("AppendMenu", "UInt", hMenu, "UInt", 0x0000 | 0x0000, "UInt", 0xF120, "Str", "Restore")
+		}
+		if (!MenuItemExist(hMenu, 0xF010)) {
+			DllCall("AppendMenu", "UInt", hMenu, "UInt", 0x0000 | 0x0000, "UInt", 0xF010, "Str", "Move")
+		}
+		if (!MenuItemExist(hMenu, 0xF000)) {
+			DllCall("AppendMenu", "UInt", hMenu, "UInt", 0x0000 | 0x0000, "UInt", 0xF000, "Str", "Size")
+		}
+		if (!MenuItemExist(hMenu, 0xF020)) {
+			DllCall("AppendMenu", "UInt", hMenu, "UInt", 0x0000 | 0x0000, "UInt", 0xF020, "Str", "Minimize")
+		}
+		if (!MenuItemExist(hMenu, 0xF030)) {
+			DllCall("AppendMenu", "UInt", hMenu, "UInt", 0x0000 | 0x0000, "UInt", 0xF030, "Str", "Maximize")
+		}
 		DllCall("DrawMenuBar", "UInt", hwnd)
 	}
+}
+
+MenuItemExist(hMenu, uIDNewItem) {
+	VarSetCapacity(MENUITEMINFO, size := 80, 0)
+	NumPut(size, MENUITEMINFO, 0, "UInt") ; cbSize = 80
+	NumPut(0x00000002, MENUITEMINFO, 4, "UInt") ; fMask = MIIM_ID (0x00000002)
+	
+	itemCount := DllCall("GetMenuItemCount", "Ptr", hMenu)
+	Loop, %itemCount% {
+		DllCall("GetMenuItemInfo", "Ptr", hMenu, "UInt", A_Index-1, "UInt", true, "Ptr", &MENUITEMINFO)
+		if (NumGet(MENUITEMINFO, 4*4, "UInt") = uIDNewItem) { ; compare wID
+			return true
+		}
+	}
+	return false
 }
